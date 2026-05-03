@@ -13,13 +13,15 @@ export default function Products() {
     condition: "baik",
   });
 
-  // 🔥 AMBIL BASE URL DARI ENV
   const BASE_URL = import.meta.env.VITE_BASE_URL;
-
-  // 🔥 STATE QR
   const [selectedQR, setSelectedQR] = useState(null);
 
-  // FETCH DATA (AMAN)
+  // 🔎 SEARCH + PAGINATION STATE
+  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // FETCH DATA
   useEffect(() => {
     let isMounted = true;
 
@@ -39,7 +41,6 @@ export default function Products() {
     };
   }, []);
 
-  // HANDLE INPUT
   const handleChange = (e) => {
     setForm({
       ...form,
@@ -47,13 +48,11 @@ export default function Products() {
     });
   };
 
-  // REFRESH
   const fetchProducts = async () => {
     const res = await API.get("/products");
     setProducts(res.data);
   };
 
-  // CREATE
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -76,7 +75,6 @@ export default function Products() {
     }
   };
 
-  // DELETE
   const handleDelete = async (id) => {
     try {
       await API.delete(`/products/${id}`);
@@ -88,19 +86,51 @@ export default function Products() {
     }
   };
 
-  // 🔥 GENERATE LINK QR (SUDAH DINAMIS)
   const getQRValue = (product) => {
     return `${BASE_URL}/borrow?product_id=${product.id}`;
   };
 
+  // =========================
+  // FILTER SEARCH
+  // =========================
+  const filteredData = products.filter((p) =>
+    p.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // =========================
+  // PAGINATION LOGIC
+  // =========================
+  const indexOfLast = currentPage * itemsPerPage;
+  const indexOfFirst = indexOfLast - itemsPerPage;
+  const currentData = filteredData.slice(indexOfFirst, indexOfLast);
+
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+
+  const goToPage = (page) => setCurrentPage(page);
+
   return (
     <div className="p-4 md:p-6">
+
       {/* HEADER */}
       <div className="mb-6">
         <h2 className="text-xl md:text-2xl font-bold">Barang</h2>
         <p className="text-gray-500 text-sm">
           Kelola data barang inventaris
         </p>
+      </div>
+
+      {/* SEARCH */}
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Cari nama barang..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setCurrentPage(1);
+          }}
+          className="border p-2 rounded w-full md:w-1/3"
+        />
       </div>
 
       {/* FORM */}
@@ -147,12 +177,12 @@ export default function Products() {
           />
         </div>
 
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded transition w-full md:w-auto">
+        <button className="bg-blue-600 text-white px-4 py-2 rounded w-full md:w-auto">
           Tambah Produk
         </button>
       </form>
 
-      {/* TABLE (DESKTOP) */}
+      {/* TABLE DESKTOP */}
       <div className="hidden md:block bg-white rounded-xl shadow overflow-x-auto">
         <table className="w-full">
           <thead className="bg-gray-100">
@@ -167,7 +197,7 @@ export default function Products() {
           </thead>
 
           <tbody>
-            {products.map((p) => (
+            {currentData.map((p) => (
               <tr key={p.id} className="border-t">
                 <td className="p-3">{p.name}</td>
                 <td>{p.category}</td>
@@ -177,7 +207,7 @@ export default function Products() {
                 <td>
                   <button
                     onClick={() => setSelectedQR(p)}
-                    className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded"
+                    className="bg-purple-600 text-white px-3 py-1 rounded"
                   >
                     QR
                   </button>
@@ -186,7 +216,7 @@ export default function Products() {
                 <td>
                   <button
                     onClick={() => handleDelete(p.id)}
-                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    className="bg-red-500 text-white px-3 py-1 rounded"
                   >
                     Hapus
                   </button>
@@ -195,15 +225,43 @@ export default function Products() {
             ))}
           </tbody>
         </table>
+
+        {/* PAGINATION */}
+        <div className="flex justify-center gap-2 p-4">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => goToPage(currentPage - 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Prev
+          </button>
+
+          {[...Array(totalPages)].map((_, i) => (
+            <button
+              key={i}
+              onClick={() => goToPage(i + 1)}
+              className={`px-3 py-1 border rounded ${
+                currentPage === i + 1 ? "bg-blue-500 text-white" : ""
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => goToPage(currentPage + 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
-      {/* CARD (MOBILE) */}
+      {/* MOBILE */}
       <div className="md:hidden space-y-3">
-        {products.map((p) => (
-          <div
-            key={p.id}
-            className="bg-white p-4 rounded-xl shadow space-y-2"
-          >
+        {currentData.map((p) => (
+          <div key={p.id} className="bg-white p-4 rounded-xl shadow space-y-2">
             <div className="font-semibold text-lg">{p.name}</div>
             <div className="text-sm text-gray-500">
               Kategori: {p.category || "-"}
@@ -228,6 +286,29 @@ export default function Products() {
             </div>
           </div>
         ))}
+
+        {/* PAGINATION MOBILE */}
+        <div className="flex justify-center gap-2 pt-3">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => goToPage(currentPage - 1)}
+            className="px-3 py-1 border rounded"
+          >
+            Prev
+          </button>
+
+          <button className="px-3 py-1 border rounded bg-gray-100">
+            {currentPage} / {totalPages}
+          </button>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => goToPage(currentPage + 1)}
+            className="px-3 py-1 border rounded"
+          >
+            Next
+          </button>
+        </div>
       </div>
 
       {/* MODAL QR */}
@@ -235,16 +316,10 @@ export default function Products() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl text-center shadow max-w-sm w-full">
             <h3 className="font-bold text-lg">{selectedQR.name}</h3>
-            <p className="text-sm text-gray-500 mb-3">
-              Scan untuk meminjam barang
-            </p>
 
-            <QRCodeCanvas
-              value={getQRValue(selectedQR)}
-              size={200}
-            />
+            <QRCodeCanvas value={getQRValue(selectedQR)} size={200} />
 
-            <p className="text-xs mt-3 text-gray-400 break-all">
+            <p className="text-xs mt-3 break-all">
               {getQRValue(selectedQR)}
             </p>
 
