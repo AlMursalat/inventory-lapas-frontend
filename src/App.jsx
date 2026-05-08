@@ -1,6 +1,9 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState } from "react";
 
+import Login from "./pages/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
+
 import Dashboard from "./pages/Dashboard";
 import Products from "./pages/Products";
 import Borrowers from "./pages/Borrowers";
@@ -22,9 +25,9 @@ function AdminLayout({ children }) {
   };
 
   return (
-    <div className="flex min-h-screen">
-
-      {/* SIDEBAR (ONLY ONCE — IMPORTANT) */}
+    <div className="min-h-screen bg-gray-100">
+      
+      {/* SIDEBAR */}
       <Sidebar
         isOpen={sidebarOpen}
         toggleSidebar={toggleSidebar}
@@ -34,18 +37,18 @@ function AdminLayout({ children }) {
       {sidebarOpen && (
         <div
           onClick={closeSidebar}
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden"
         />
       )}
 
       {/* MAIN CONTENT */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex flex-col md:ml-64 min-h-screen">
 
         {/* NAVBAR */}
         <Navbar toggleSidebar={toggleSidebar} />
 
         {/* PAGE CONTENT */}
-        <main className="w-full p-4 md:p-6 bg-gray-100 min-h-screen">
+        <main className="flex-1 p-4 md:p-6 overflow-x-hidden">
           {children}
         </main>
 
@@ -59,43 +62,65 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* PUBLIC */}
+        {/* =========================
+            PUBLIC ROUTES
+        ========================= */}
+
+        {/* LOGIN */}
+        <Route path="/login" element={<Login />} />
+
+        {/* QR BORROW PUBLIC */}
         <Route path="/borrow" element={<BorrowViaQR />} />
 
-        {/* ADMIN */}
+        {/* =========================
+            PROTECTED ADMIN ROUTES
+        ========================= */}
+
+        {/* DASHBOARD */}
         <Route
           path="/"
           element={
-            <AdminLayout>
-              <Dashboard />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <Dashboard />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
 
+        {/* PRODUCTS */}
         <Route
           path="/products"
           element={
-            <AdminLayout>
-              <Products />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <Products />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
 
+        {/* BORROWERS */}
         <Route
           path="/borrowers"
           element={
-            <AdminLayout>
-              <Borrowers />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <Borrowers />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
 
+        {/* BORROWINGS */}
         <Route
           path="/borrowings"
           element={
-            <AdminLayout>
-              <Borrowings />
-            </AdminLayout>
+            <ProtectedRoute>
+              <AdminLayout>
+                <Borrowings />
+              </AdminLayout>
+            </ProtectedRoute>
           }
         />
 
