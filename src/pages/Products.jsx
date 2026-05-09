@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
 import { QRCodeCanvas } from "qrcode.react";
-import { useAppContext } from "../context/AppContext";
 
 import {
   Search,
@@ -27,30 +26,17 @@ export default function Products() {
 
   const [selectedQR, setSelectedQR] = useState(null);
 
-  // CONTEXT REFRESH
-  const { refreshKey, triggerRefresh } = useAppContext();
-
   // SEARCH + PAGINATION
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
   const itemsPerPage = 10;
 
-  // FETCH PRODUCTS
-  const fetchProducts = async () => {
-    try {
-      const res = await API.get("/products");
-      setProducts(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  // AUTO REFRESH
+  // FETCH DATA
   useEffect(() => {
     let isMounted = true;
 
-    const loadData = async () => {
+    const fetchData = async () => {
       try {
         const res = await API.get("/products");
 
@@ -62,12 +48,17 @@ export default function Products() {
       }
     };
 
-    loadData();
+    fetchData();
 
     return () => {
       isMounted = false;
     };
-  }, [refreshKey]);
+  }, []);
+
+  const fetchProducts = async () => {
+    const res = await API.get("/products");
+    setProducts(res.data);
+  };
 
   // HANDLE INPUT
   const handleChange = (e) => {
@@ -94,9 +85,6 @@ export default function Products() {
 
       await fetchProducts();
 
-      // 🔥 TRIGGER GLOBAL REFRESH
-      triggerRefresh();
-
       alert("Produk berhasil ditambahkan");
     } catch (err) {
       console.error(err);
@@ -110,9 +98,6 @@ export default function Products() {
       await API.delete(`/products/${id}`);
 
       await fetchProducts();
-
-      // 🔥 TRIGGER GLOBAL REFRESH
-      triggerRefresh();
 
       alert("Produk berhasil dihapus");
     } catch (err) {
@@ -513,6 +498,7 @@ export default function Products() {
               bg-white rounded-3xl shadow-2xl
               w-full max-w-sm
               p-6 text-center
+              animate-fadeIn
             "
           >
 
@@ -530,6 +516,7 @@ export default function Products() {
               Scan QR untuk melakukan peminjaman barang
             </p>
 
+            {/* QR CENTER */}
             <div className="flex justify-center items-center mb-5">
               <div className="bg-white p-4 rounded-2xl border shadow-sm">
                 <QRCodeCanvas

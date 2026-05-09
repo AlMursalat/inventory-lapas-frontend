@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../api/api";
 
-import { useAppContext } from "../context/AppContext";
-
 import {
   Package,
   Users,
@@ -15,8 +13,6 @@ import {
 } from "lucide-react";
 
 export default function Dashboard() {
-  const { refreshKey } = useAppContext();
-
   const [data, setData] = useState({
     products: 0,
     borrowers: 0,
@@ -55,7 +51,7 @@ export default function Dashboard() {
     return () => {
       isMounted = false;
     };
-  }, [refreshKey]);
+  }, []);
 
   const cards = [
     {
